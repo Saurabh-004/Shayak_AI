@@ -20,9 +20,8 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     cookie_secure: bool = False
-    audio_detector_url: str = ""
-    audio_detector_token: str = ""
     max_audio_mb: int = Field(default=10, ge=1, le=25)
+    assemblyai_api_key: str = ""
 
 
 @lru_cache

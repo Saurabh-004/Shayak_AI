@@ -11,7 +11,7 @@ from app.schemas import AuthRequest, TextRequest, UrlRequest
 from app.security import apply_security_headers, limit_analysis
 from app.services.ai_service import try_openai, try_openai_image
 from app.services.analyzer import analyze_text
-from app.services.audio_service import analyze_audio, validate_audio
+from app.services.audio_service import analyze_audio, first_speaker_turn, validate_audio
 from app.services.auth_service import configured as auth_configured, current_user, sign_in, sign_up
 from app.services.image_service import validate_image
 from app.services.url_analyzer import analyze_url
@@ -28,11 +28,11 @@ if origins:
 @app.middleware("http")
 async def security(request: Request, call_next):
     started = time.perf_counter()
-    upload_limit_mb = get_settings().max_audio_mb if request.url.path == "/api/analyze/audio" else get_settings().max_upload_mb
+    upload_limit_mb = get_settings().max_audio_mb if request.url.path in {"/api/analyze/audio", "/api/analyze/first-speaker"} else get_settings().max_upload_mb
     max_bytes = upload_limit_mb * 1024 * 1024 + 20_000
     if request.method in {"POST", "PUT"} and request.headers.get("content-length") and int(request.headers["content-length"]) > max_bytes:
         logger.warning("request_rejected route=%s reason=content_length_limit", request.url.path)
-        response = JSONResponse({"success": False, "error": {"code": "TOO_LARGE", "message": "That upload is too large. Please use an image under 5 MB."}}, status_code=413)
+        response = JSONResponse({"success": False, "error": {"code": "TOO_LARGE", "message": f"That upload is too large. Please use a file under {upload_limit_mb} MB."}}, status_code=413)
         return apply_security_headers(response)
     response = await call_next(request)
     if request.url.path.startswith("/api/"):
@@ -69,7 +69,7 @@ async def health():
 @app.get("/api/status")
 async def status():
     settings = get_settings()
-    return {"demo_mode": settings.demo_mode, "image_analysis_available": not settings.demo_mode and bool(settings.openai_api_key), "authentication_available": auth_configured(), "audio_detection_available": bool(settings.audio_detector_url)}
+    return {"demo_mode": settings.demo_mode, "image_analysis_available": not settings.demo_mode and bool(settings.openai_api_key), "authentication_available": auth_configured(), "audio_detection_available": True, "first_speaker_available": bool(settings.assemblyai_api_key)}
 
 
 def session_response(data: dict, message: str) -> JSONResponse:
@@ -183,8 +183,28 @@ async def audio_check(request: Request, audio: UploadFile = File(...)):
     try:
         validate_audio(data, audio.content_type or "")
         logger.info("audio_validated bytes=%d mime_type=%s", len(data), audio.content_type or "unknown")
-        result = await analyze_audio(data, audio.content_type or "audio/mpeg")
+        result = await analyze_audio(data, audio.content_type or "audio/mpeg", audio.filename or "recording.wav")
         logger.info("audio_analysis_complete risk_level=%s", result["risk_level"])
         return {"success": True, "analysis": result}
+    except (ValueError, RuntimeError) as error:
+        raise HTTPException(503 if isinstance(error, RuntimeError) else 400, str(error))
+
+
+@app.post("/api/analyze/first-speaker")
+async def first_speaker_check(request: Request, audio: UploadFile = File(...)):
+    await limit_analysis(request, "audio")
+    if not await current_user(request.cookies.get("sahayak_session", "")):
+        raise HTTPException(401, "Please sign in before checking a call recording.")
+    data = await audio.read()
+    settings = get_settings()
+    if not data:
+        raise HTTPException(400, "Please choose a call recording to check.")
+    if len(data) > settings.max_audio_mb * 1024 * 1024:
+        raise HTTPException(413, "That audio file is too large. Please use a recording under 10 MB.")
+    try:
+        validate_audio(data, audio.content_type or "")
+        turn = await first_speaker_turn(data)
+        logger.info("first_speaker_identified start_ms=%d end_ms=%d", turn["start_ms"], turn["end_ms"])
+        return {"success": True, "first_speaker": turn}
     except (ValueError, RuntimeError) as error:
         raise HTTPException(503 if isinstance(error, RuntimeError) else 400, str(error))
