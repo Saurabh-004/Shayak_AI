@@ -1,6 +1,6 @@
 # Sahayak Shield
 
-**Pause. Understand. Stay Safe.** A senior-first scam protection proof of concept. It accepts pasted messages, call descriptions, website addresses, and image uploads; explains warning signs in plain language; and offers a clearly labelled trusted-contact simulation.
+**Pause. Understand. Stay Safe.** A senior-first scam protection proof of concept. It accepts pasted messages, call descriptions, website addresses, and image uploads, then explains warning signs in plain language.
 
 ## Features
 
@@ -25,7 +25,7 @@ uvicorn app.main:app --reload
 pytest
 ```
 
-Open `http://127.0.0.1:8000`. API endpoints: `GET /health`, `POST /api/analyze/text`, `/url`, `/call`, `/image`, and `/api/trusted-contact/simulate`.
+Open `http://127.0.0.1:8000`. API endpoints: `GET /health`, `POST /api/analyze/text`, `/url`, `/call`, and `/image`.
 
 ## Environment
 
@@ -37,5 +37,5 @@ Push this repository and create a Render Blueprint from `render.yaml`, then set 
 
 ## Limitations
 
-This is a proof of concept, and not a replacement for official bank, government, cybersecurity, or law-enforcement verification. Local detection is intentionally cautious and cannot prove that a message or site is genuine. The demo trusted contact does not send a real message.
+This is a proof of concept, and not a replacement for official bank, government, cybersecurity, or law-enforcement verification. Local detection is intentionally cautious and cannot prove that a message or site is genuine.
 # Shayak_AI

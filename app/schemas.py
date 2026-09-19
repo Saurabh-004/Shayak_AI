@@ -23,7 +23,3 @@ class TextRequest(BaseModel):
 class UrlRequest(BaseModel):
     url: str = Field(max_length=2048)
 
-
-class ContactRequest(BaseModel):
-    name: str = Field(default="Priya", min_length=1, max_length=60)
-    relationship: str = Field(default="trusted contact", min_length=1, max_length=60)

@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
-from app.schemas import ContactRequest, TextRequest, UrlRequest
+from app.schemas import TextRequest, UrlRequest
 from app.security import apply_security_headers, limit_analysis
 from app.services.analyzer import analyze_text
 from app.services.ai_service import try_gemini, try_gemini_image
@@ -65,7 +65,3 @@ async def image_check(request: Request, image: UploadFile = File(...)):
     if image_analysis:
         return payload(image_analysis)
     return {"success":True,"demo_mode":get_settings().demo_mode,"message":note}
-
-@app.post("/api/trusted-contact/simulate")
-async def notify(body: ContactRequest):
-    return {"success":True,"message":f"Demo only: {body.name} has been marked as notified. No message was actually sent."}
