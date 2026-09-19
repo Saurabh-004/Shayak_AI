@@ -29,7 +29,7 @@ async def _request_openai(content: list[dict], kind: str) -> Analysis | None:
     if settings.demo_mode or not settings.openai_api_key:
         logger.info("openai_skipped type=%s reason=%s", kind, "demo_mode" if settings.demo_mode else "missing_api_key")
         return None
-    body = {"model": settings.openai_model, "instructions": SYSTEM_PROMPT, "input": [{"role": "user", "content": content}], "text": {"format": {"type": "json_object"}}, "temperature": 0.1}
+    body = {"model": settings.openai_model, "instructions": SYSTEM_PROMPT, "input": [{"role": "user", "content": content}], "text": {"format": {"type": "json_object"}}}
     try:
         started = time.perf_counter()
         logger.info("openai_request_started type=%s model=%s", kind, settings.openai_model)

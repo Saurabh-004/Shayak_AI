@@ -61,6 +61,11 @@ async def home():
     return FileResponse("static/index.html")
 
 
+@app.get("/signin")
+async def signin_page():
+    return FileResponse("static/signin.html")
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
