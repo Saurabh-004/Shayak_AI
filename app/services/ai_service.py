@@ -26,8 +26,11 @@ def safe_analysis(value: Analysis) -> Analysis:
 
 async def _request_openai(content: list[dict], kind: str) -> Analysis | None:
     settings = get_settings()
-    if settings.demo_mode or not settings.openai_api_key:
-        logger.info("openai_skipped type=%s reason=%s", kind, "demo_mode" if settings.demo_mode else "missing_api_key")
+    if not settings.openai_api_key:
+        logger.info("openai_skipped type=%s reason=missing_api_key", kind)
+        return None
+    if settings.demo_mode and kind != "image":
+        logger.info("openai_skipped type=%s reason=demo_mode", kind)
         return None
     body = {"model": settings.openai_model, "instructions": SYSTEM_PROMPT, "input": [{"role": "user", "content": content}], "text": {"format": {"type": "json_object"}}}
     try:

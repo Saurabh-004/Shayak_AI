@@ -1,6 +1,6 @@
 import logging
 import time
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -13,7 +13,7 @@ from app.services.ai_service import try_openai, try_openai_image
 from app.services.analyzer import analyze_text
 from app.services.audio_service import analyze_audio, first_speaker_turn, validate_audio
 from app.services.auth_service import configured as auth_configured, current_user, sign_in, sign_up
-from app.services.image_service import validate_image
+from app.services.image_service import IMAGE_HELP_MESSAGE, extract_text_from_image, validate_image
 from app.services.url_analyzer import analyze_url
 
 configure_logging()
@@ -74,7 +74,7 @@ async def health():
 @app.get("/api/status")
 async def status():
     settings = get_settings()
-    return {"demo_mode": settings.demo_mode, "image_analysis_available": not settings.demo_mode and bool(settings.openai_api_key), "authentication_available": auth_configured(), "audio_detection_available": True, "first_speaker_available": bool(settings.assemblyai_api_key)}
+    return {"demo_mode": settings.demo_mode, "image_analysis_available": True, "authentication_available": auth_configured(), "audio_detection_available": True, "first_speaker_available": bool(settings.assemblyai_api_key)}
 
 
 def session_response(data: dict, message: str) -> JSONResponse:
@@ -154,7 +154,7 @@ async def url_check(body: UrlRequest, request: Request):
 
 
 @app.post("/api/analyze/image")
-async def image_check(request: Request, image: UploadFile = File(...)):
+async def image_check(request: Request, image: UploadFile = File(...), visible_text: str = Form(default="")):
     await limit_analysis(request, "image")
     data = await image.read()
     if not data:
@@ -162,7 +162,7 @@ async def image_check(request: Request, image: UploadFile = File(...)):
     if len(data) > get_settings().max_upload_mb * 1024 * 1024:
         raise HTTPException(413, "That image is too large. Please use an image under 5 MB.")
     try:
-        note = validate_image(data, image.content_type or "")
+        validate_image(data, image.content_type or "")
     except ValueError as error:
         raise HTTPException(400, str(error))
     logger.info("image_validated bytes=%d mime_type=%s demo_mode=%s", len(data), image.content_type or "unknown", get_settings().demo_mode)
@@ -170,8 +170,12 @@ async def image_check(request: Request, image: UploadFile = File(...)):
     if image_analysis:
         logger.info("image_analysis_complete outcome=openai risk_level=%s category=%s", image_analysis.risk_level, image_analysis.category)
         return payload(image_analysis)
-    logger.info("image_analysis_complete outcome=fallback reason=demo_mode_or_ai_unavailable")
-    return {"success": True, "demo_mode": get_settings().demo_mode, "message": note}
+    text = visible_text.strip() or extract_text_from_image(data)
+    if text:
+        logger.info("image_analysis_complete outcome=text_fallback chars=%d", len(text))
+        return payload(await try_openai(text) or analyze_text(text, "screenshot"))
+    logger.info("image_analysis_complete outcome=needs_text")
+    return {"success": True, "demo_mode": get_settings().demo_mode, "needs_text": True, "message": IMAGE_HELP_MESSAGE}
 
 
 @app.post("/api/analyze/audio")

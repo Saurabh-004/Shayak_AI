@@ -16,3 +16,9 @@ def test_url(): assert client.post('/api/analyze/url',json={'url':'https://secur
 def test_headers():
  r=client.get('/health');assert r.headers['x-content-type-options']=='nosniff' and r.headers['x-frame-options']=='DENY'
 def test_bad_upload(): assert client.post('/api/analyze/image',files={'image':('bad.svg',b'<svg/>','image/svg+xml')}).status_code==400
+def test_image_with_pasted_text():
+    from io import BytesIO
+    from PIL import Image
+    buf=BytesIO(); Image.new('RGB',(10,10),'white').save(buf,format='PNG')
+    r=client.post('/api/analyze/image',files={'image':('shot.png',buf.getvalue(),'image/png')},data={'visible_text':'Your SBI account will be blocked today. Share OTP immediately.'})
+    assert r.status_code==200 and r.json()['analysis']['risk_level']=='HIGH'

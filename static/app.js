@@ -5,7 +5,7 @@ const cfg = {
   text: ['Paste a message', 'Paste the message here', 'For example: Your bank account will be blocked today...'],
   url: ['Check a website', 'Paste the website address', 'https://example.com'],
   call: ['Describe a call', 'What did the caller say?', 'For example: The caller said my account will close unless I share an OTP.'],
-  image: ['Check a screenshot', 'Choose a JPG, PNG, or WEBP screenshot', ''],
+  image: ['Check a screenshot', 'Choose a JPG, PNG, or WEBP screenshot', '', 'Paste the message shown in the screenshot (optional)'],
   audio: ['Audio deepfake check', 'Choose an MP3, WAV, OGG, or M4A recording', ''],
   first: ['First speaker call check', 'Choose a call recording. We will isolate the first detected speaker turn.', '']
 };
@@ -31,6 +31,12 @@ function openForm(t) {
   $('#input').placeholder = c[2];
   $('#input').hidden = ['image', 'audio', 'first'].includes(t);
   $('#image').hidden = t !== 'image';
+  $('#imageTextLabel').hidden = t !== 'image';
+  $('#imageText').hidden = t !== 'image';
+  if (t === 'image') {
+    $('#imageTextLabel').textContent = c[3];
+    $('#imageText').value = '';
+  }
   $('#audio').hidden = !['audio', 'first'].includes(t);
   $('#voice').hidden = !['text', 'call'].includes(t);
 }
@@ -49,12 +55,17 @@ $('#submit').onclick = async () => {
     if (type === 'image') {
       const f = $('#image').files[0];
       if (!f) throw Error('Please choose a screenshot first.');
+      showLoading('Reading your screenshot… This may take up to 30 seconds the first time.');
       const d = new FormData();
       d.append('image', f);
+      const pasted = $('#imageText').value.trim();
+      if (pasted) d.append('visible_text', pasted);
       const r = await fetch('/api/analyze/image', { method: 'POST', body: d });
       const x = await r.json();
       if (!r.ok) throw Error(x.error?.message || 'Please try again.');
-      return x.message ? showNote(x.message) : show(x.analysis);
+      if (x.analysis) return show(x.analysis);
+      if (x.needs_text) return showImageHelp(x.message);
+      return showImageHelp(x.message || 'Could not analyse this screenshot.');
     }
     if (type === 'audio' || type === 'first') {
       const f = $('#audio').files[0];
@@ -147,10 +158,29 @@ function showAudio(a, turn) {
   $('#again').onclick = $('#back').onclick;
 }
 
-function showNote(m) {
+function showLoading(m) {
   $('#result').hidden = false;
   $('#result').className = 'risk MEDIUM';
   $('#result').innerHTML = `<h2>Please wait</h2><p>${esc(m)}</p>`;
+}
+
+function showNote(m) { showLoading(m); }
+
+function showImageHelp(m) {
+  $('#formBox').hidden = false;
+  $('#result').hidden = false;
+  $('#result').className = 'risk MEDIUM';
+  $('#imageTextLabel').hidden = false;
+  $('#imageText').hidden = false;
+  $('#result').innerHTML = `
+    <h2>Need the message text</h2>
+    <p>${esc(m)}</p>
+    <div class="resultActions">
+      <button id="retryImage" type="button">Try again with text</button>
+      <button id="pasteText" class="secondary" type="button">Paste message instead</button>
+    </div>`;
+  $('#retryImage').onclick = () => { $('#result').hidden = true; $('#imageText').focus(); };
+  $('#pasteText').onclick = () => { openForm('text'); $('#input').value = $('#imageText').value; $('#result').hidden = true; };
 }
 
 $('#voice').onclick = () => {
@@ -190,7 +220,7 @@ fetch('/api/status')
   .then(s => {
     if (s) {
       $('.demo').textContent = s.demo_mode
-        ? 'Demo mode · Your content is not saved.'
+        ? 'Demo mode · Screenshots are read locally. Your content is not saved.'
         : 'AI analysis enabled · Your content is not saved.';
     }
   })
