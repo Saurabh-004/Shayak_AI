@@ -9,10 +9,12 @@
 - Lightweight local scam heuristics and URL static analysis. No website is opened.
 - Upload validation (JPG/PNG/WEBP only, magic bytes, size cap), in-memory rate limiting, CSP/security headers, privacy-safe behavior.
 - `DEMO_MODE=true` works with no API key. The current image flow validates safely and asks for pasted text when no configured multimodal provider is available.
+- Persistent account signup and login through Supabase Auth. Password hashing is handled by Supabase; this app never stores plaintext passwords.
+- Authenticated call-recording safety checks via an optional external audio deepfake-risk detector. Results are estimates, never proof.
 
 ## Architecture
 
-Browser → FastAPI → local heuristic/URL analyzer or optional server-side Gemini enrichment (including validated screenshots). No database, workers, persistent uploads, or local ML models. Set `DEMO_MODE=false` plus `GEMINI_API_KEY` to enable Gemini; invalid/failed AI output safely falls back to local guidance. No secret is sent to the browser.
+Browser → FastAPI → local heuristic/URL analyzer or optional server-side OpenAI analysis (including validated screenshots). No database, workers, persistent uploads, or local ML models. Set `DEMO_MODE=false` plus `OPENAI_API_KEY` to enable OpenAI analysis; invalid/failed AI output safely falls back to local guidance. No secret is sent to the browser.
 
 ## Run locally
 
@@ -29,7 +31,15 @@ Open `http://127.0.0.1:8000`. API endpoints: `GET /health`, `POST /api/analyze/t
 
 ## Environment
 
-`GEMINI_API_KEY`, `DEMO_MODE`, `ALLOWED_ORIGINS`, `MAX_UPLOAD_MB`, and `RATE_LIMIT_PER_MINUTE`. `.env` is ignored by Git.
+`OPENAI_API_KEY`, `OPENAI_MODEL`, `DEMO_MODE`, `ALLOWED_ORIGINS`, `MAX_UPLOAD_MB`, `RATE_LIMIT_PER_MINUTE`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `COOKIE_SECURE`, `AUDIO_DETECTOR_URL`, `AUDIO_DETECTOR_TOKEN`, and `MAX_AUDIO_MB`. `.env` is ignored by Git.
+
+For local development, copy `.env.example` to the project-root `.env` file. On Render, configure the same names in the service Environment page; Render variables override local-file values.
+
+## Authentication and audio setup
+
+Create a Supabase project, enable Email/Password authentication, and add its project URL and publishable/anon key as `SUPABASE_URL` and `SUPABASE_ANON_KEY`. Set `COOKIE_SECURE=true` on Render and `false` locally. Supabase Auth manages persistent users and password hashing.
+
+Set `AUDIO_DETECTOR_URL` to an audio-classification endpoint that accepts raw audio bytes and returns a Hugging Face-style list of `{label, score}` values. Add `AUDIO_DETECTOR_TOKEN` only if that detector requires a token. The app does not store call recordings.
 
 ## Deploy on Render
 

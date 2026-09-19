@@ -11,7 +11,6 @@ class Analysis(BaseModel):
     warning_signs: list[str] = Field(default_factory=list)
     do_not: list[str] = Field(default_factory=list)
     recommended_actions: list[str] = Field(default_factory=list)
-    trusted_contact_recommended: bool = False
     detail: str = ""
     technical_detail: str = ""
 
@@ -23,3 +22,7 @@ class TextRequest(BaseModel):
 class UrlRequest(BaseModel):
     url: str = Field(max_length=2048)
 
+
+class AuthRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+    password: str = Field(min_length=10, max_length=128)
