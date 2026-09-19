@@ -177,8 +177,6 @@ async def image_check(request: Request, image: UploadFile = File(...)):
 @app.post("/api/analyze/audio")
 async def audio_check(request: Request, audio: UploadFile = File(...)):
     await limit_analysis(request, "audio")
-    if not await current_user(request.cookies.get("sahayak_session", "")):
-        raise HTTPException(401, "Please sign in before checking an audio recording.")
     data = await audio.read()
     settings = get_settings()
     if not data:
@@ -198,8 +196,6 @@ async def audio_check(request: Request, audio: UploadFile = File(...)):
 @app.post("/api/analyze/first-speaker")
 async def first_speaker_check(request: Request, audio: UploadFile = File(...)):
     await limit_analysis(request, "audio")
-    if not await current_user(request.cookies.get("sahayak_session", "")):
-        raise HTTPException(401, "Please sign in before checking a call recording.")
     data = await audio.read()
     settings = get_settings()
     if not data:

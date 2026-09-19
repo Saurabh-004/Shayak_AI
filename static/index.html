@@ -1,1 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sahayak Shield</title><link rel="stylesheet" href="/static/style.css"></head><body><main class="shell"><header><p class="brand">🛡️ SAHAYAK SHIELD</p><h1>Pause. Understand.<br>Stay Safe.</h1><p class="intro">Choose what you would like to check.</p><p class="demo">Loading safety status…</p><a class="signinLink" href="/signin">Sign in</a></header><section id="choose" aria-label="Choose what to check"><div class="actions"><button data-type="audio">🔊 Audio deepfake check</button><button data-type="first">👤 First speaker call check</button><button data-type="image">📷 Check screenshot</button><button data-type="text">📋 Paste message</button><button data-type="url">🔗 Check website</button><button data-type="call">🎙️ Describe a call</button></div></section><section id="formBox" hidden><button class="back" id="back">← Go back</button><h2 id="formTitle">Check a message</h2><label id="label" for="input">Paste the message here</label><textarea id="input" rows="6" maxlength="8000"></textarea><input id="image" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="audio" type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a" hidden><p id="voiceNotice" class="hint" hidden></p><div class="formActions"><button id="voice" class="secondary" type="button">🎙️ Speak instead</button><button id="submit">Check safely</button></div></section><section id="result" hidden aria-live="polite"></section><footer>Never share your OTP, PIN or password with anyone.<br><small>AI-media checks are risk estimates, not proof.</small></footer></main><script src="/static/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sahayak Shield</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="heroTop">
+        <p class="brand">Sahayak Shield</p>
+        <a class="signinLink" href="/signin">Sign in (optional)</a>
+      </div>
+      <h1>Pause. Understand.<br>Stay safe.</h1>
+      <p class="intro">Choose what you would like to check. No sign-in required.</p>
+      <p class="demo">Loading safety status…</p>
+    </header>
+
+    <section id="choose" aria-label="Choose what to check">
+      <div class="actions">
+        <button data-type="text">Paste a message</button>
+        <button data-type="call">Describe a phone call</button>
+        <button data-type="url">Check a website link</button>
+        <button data-type="image">Check a screenshot</button>
+        <button data-type="audio">Check an audio recording</button>
+        <button data-type="first">Check who spoke first on a call</button>
+      </div>
+    </section>
+
+    <section id="formBox" hidden>
+      <button class="back" id="back" type="button">Go back</button>
+      <h2 id="formTitle">Check a message</h2>
+      <label id="label" for="input">Paste the message here</label>
+      <textarea id="input" rows="6" maxlength="8000"></textarea>
+      <input id="image" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <input id="audio" type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a" hidden>
+      <p id="voiceNotice" class="hint" hidden></p>
+      <div class="formActions">
+        <button id="voice" class="secondary" type="button">Speak instead</button>
+        <button id="submit" type="button">Check safely</button>
+      </div>
+    </section>
+
+    <section id="result" hidden aria-live="polite"></section>
+
+    <footer>
+      <p>Never share your OTP, PIN, or password with anyone.</p>
+      <small>AI checks are risk estimates, not proof.</small>
+    </footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
